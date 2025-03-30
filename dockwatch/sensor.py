@@ -51,12 +51,19 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                         api_key,
                     )
                 )
-            # Aggiungi il sensore generale che aggrega tutte le info
+
+            # Aggiungi il sensore overview con il numero totale di container
             sensors.append(DockerOverviewSensor(hass, docker_host, api_key, SCAN_INTERVAL))
+
+            # Aggiungi sensori per i container up e down
+            sensors.append(DockerUpContainersSensor(hass, docker_host, api_key, SCAN_INTERVAL))
+            sensors.append(DockerDownContainersSensor(hass, docker_host, api_key, SCAN_INTERVAL))
+
             async_add_entities(sensors, update_before_add=True)
     except Exception as e:
         _LOGGER.error("Error fetching container list: %s", e)
         return
+
 
 class DockerContainerSensor(Entity):
     """Sensore individuale per ciascun container Docker."""
@@ -103,8 +110,9 @@ class DockerContainerSensor(Entity):
             self._state = STATE_UNKNOWN
             self._attributes = {}
 
+
 class DockerOverviewSensor(Entity):
-    """Sensore generale che aggrega le informazioni di tutti i container Docker."""
+    """Sensore generale che aggrega il numero totale di container Docker."""
     def __init__(self, hass, host, api_key, scan_interval):
         self.hass = hass
         self._host = host
@@ -134,24 +142,99 @@ class DockerOverviewSensor(Entity):
                 response.raise_for_status()
                 data = await response.json()
                 containers = data.get("response", [])
-                up_containers = []
-                down_containers = []
-                health_info = {}
-                for container in containers:
-                    name = container.get("name", "unknown")
-                    status = container.get("status", "").lower()
-                    health = container.get("health", "unknown")
-                    if status == "running":
-                        up_containers.append(name)
-                        health_info[name] = health
-                    else:
-                        down_containers.append(name)
-                        health_info[name] = health
-                self._state = f"Up: {len(up_containers)}, Down: {len(down_containers)}"
+                total_containers = len(containers)
+
+                self._state = str(total_containers)
                 self._attributes = {
-                    "up_containers": up_containers,
-                    "down_containers": down_containers,
-                    "health": health_info
+                    "total_containers": total_containers,
+                }
+        except Exception as e:
+            _LOGGER.error("Error fetching data from %s: %s", self._host, e)
+            self._state = STATE_UNKNOWN
+            self._attributes = {}
+
+
+class DockerUpContainersSensor(Entity):
+    """Sensore che conta i container in stato 'up'."""
+    def __init__(self, hass, host, api_key, scan_interval):
+        self.hass = hass
+        self._host = host
+        self.api_key = api_key
+        self.scan_interval = scan_interval
+        self._state = STATE_UNKNOWN
+        self._attributes = {}
+
+    @property
+    def name(self):
+        return "Docker Up Containers"
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def extra_state_attributes(self):
+        return self._attributes
+
+    async def async_update(self):
+        session = async_get_clientsession(self.hass)
+        headers = {"X-Api-Key": self.api_key}
+        try:
+            url = f"{self._host}/api/stats/containers"
+            async with session.get(url, headers=headers) as response:
+                response.raise_for_status()
+                data = await response.json()
+                containers = data.get("response", [])
+                up_containers = [c["name"] for c in containers if c.get("status", "").lower() == "running"]
+
+                # Modifica: unisci i nomi con una virgola e uno spazio
+                self._state = len(up_containers)
+                self._attributes = {
+                    "up_containers": ", ".join(up_containers),  # Unisce i nomi con ', '
+                }
+        except Exception as e:
+            _LOGGER.error("Error fetching data from %s: %s", self._host, e)
+            self._state = STATE_UNKNOWN
+            self._attributes = {}
+
+
+class DockerDownContainersSensor(Entity):
+    """Sensore che conta i container in stato 'down'."""
+    def __init__(self, hass, host, api_key, scan_interval):
+        self.hass = hass
+        self._host = host
+        self.api_key = api_key
+        self.scan_interval = scan_interval
+        self._state = STATE_UNKNOWN
+        self._attributes = {}
+
+    @property
+    def name(self):
+        return "Docker Down Containers"
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def extra_state_attributes(self):
+        return self._attributes
+
+    async def async_update(self):
+        session = async_get_clientsession(self.hass)
+        headers = {"X-Api-Key": self.api_key}
+        try:
+            url = f"{self._host}/api/stats/containers"
+            async with session.get(url, headers=headers) as response:
+                response.raise_for_status()
+                data = await response.json()
+                containers = data.get("response", [])
+                down_containers = [c["name"] for c in containers if c.get("status", "").lower() != "running"]
+
+                # Modifica: unisci i nomi con una virgola e uno spazio
+                self._state = len(down_containers)
+                self._attributes = {
+                    "down_containers": ", ".join(down_containers),  # Unisce i nomi con ', '
                 }
         except Exception as e:
             _LOGGER.error("Error fetching data from %s: %s", self._host, e)
