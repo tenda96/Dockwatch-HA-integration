@@ -1,35 +1,31 @@
 import logging
-from datetime import timedelta
 from homeassistant.const import STATE_UNKNOWN, CONF_API_KEY
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from .const import CONF_URL, SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
-# Constants used for configuration
-CONF_URL = "url"
-SCAN_INTERVAL = timedelta(minutes=1)
-
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up Dockwatch sensors based on a config entry."""
+    """Set up Dockwatch sensors from the config entry."""
     docker_host = config_entry.data[CONF_URL]
     api_key = config_entry.data[CONF_API_KEY]
 
-    _LOGGER.debug("Using Dockwatch host: %s", docker_host)
+    _LOGGER.debug("Starting Dockwatch integration using host: %s", docker_host)
     session = async_get_clientsession(hass)
     headers = {"X-Api-Key": api_key}
 
     sensors = []
 
     try:
-        # Fetch initial container list from API
+        # Initial fetch to discover containers
         url = f"{docker_host}/api/stats/containers"
         async with session.get(url, headers=headers) as response:
             response.raise_for_status()
             data = await response.json()
             containers = data.get("response", [])
 
-            # Create an individual sensor for each container
+            # Add an individual sensor for each container found
             for container in containers:
                 container_name = container.get("name", "unknown")
                 sensors.append(
@@ -43,19 +39,19 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     )
                 )
 
-            # Add overview sensors
+            # Add aggregation and summary sensors
             sensors.append(DockwatchOverviewSensor(hass, docker_host, api_key, SCAN_INTERVAL))
             sensors.append(DockwatchUpContainersSensor(hass, docker_host, api_key, SCAN_INTERVAL))
             sensors.append(DockwatchDownContainersSensor(hass, docker_host, api_key, SCAN_INTERVAL))
 
             async_add_entities(sensors, update_before_add=True)
     except Exception as e:
-        _LOGGER.error("Error fetching Dockwatch container list: %s", e)
+        _LOGGER.error("Failed to fetch container list from Dockwatch: %s", e)
         return
 
 
 class DockwatchContainerSensor(Entity):
-    """Individual sensor for each Docker container."""
+    """Sensor representing a specific Docker container."""
     def __init__(self, hass, name, host, container, scan_interval, api_key):
         self.hass = hass
         self._name = f"Dockwatch {name}"
@@ -79,7 +75,7 @@ class DockwatchContainerSensor(Entity):
         return self._attributes
 
     async def async_update(self):
-        """Update individual container data."""
+        """Update container state and attributes."""
         session = async_get_clientsession(self.hass)
         headers = {"X-Api-Key": self.api_key}
         try:
@@ -96,12 +92,12 @@ class DockwatchContainerSensor(Entity):
                     self._state = STATE_UNKNOWN
                     self._attributes = {}
         except Exception as e:
-            _LOGGER.error("Error updating Dockwatch container %s: %s", self._container, e)
+            _LOGGER.error("Update failed for Dockwatch container %s: %s", self._container, e)
             self._state = STATE_UNKNOWN
 
 
 class DockwatchOverviewSensor(Entity):
-    """Sensor for total Docker container count."""
+    """Sensor for the total number of containers."""
     def __init__(self, hass, host, api_key, scan_interval):
         self.hass = hass
         self._host = host
@@ -123,7 +119,7 @@ class DockwatchOverviewSensor(Entity):
         return self._attributes
 
     async def async_update(self):
-        """Update total container count."""
+        """Update the total container count."""
         session = async_get_clientsession(self.hass)
         headers = {"X-Api-Key": self.api_key}
         try:
@@ -132,17 +128,16 @@ class DockwatchOverviewSensor(Entity):
                 response.raise_for_status()
                 data = await response.json()
                 containers = data.get("response", [])
-                total_containers = len(containers)
-
-                self._state = str(total_containers)
-                self._attributes = {"total_containers": total_containers}
+                total = len(containers)
+                self._state = str(total)
+                self._attributes = {"total_containers": total}
         except Exception as e:
-            _LOGGER.error("Error updating Dockwatch overview: %s", e)
+            _LOGGER.error("Update failed for Dockwatch overview: %s", e)
             self._state = STATE_UNKNOWN
 
 
 class DockwatchUpContainersSensor(Entity):
-    """Sensor for running containers count."""
+    """Sensor for the count of running containers."""
     def __init__(self, hass, host, api_key, scan_interval):
         self.hass = hass
         self._host = host
@@ -164,7 +159,7 @@ class DockwatchUpContainersSensor(Entity):
         return self._attributes
 
     async def async_update(self):
-        """Update running containers count."""
+        """Update the count of containers with status 'running'."""
         session = async_get_clientsession(self.hass)
         headers = {"X-Api-Key": self.api_key}
         try:
@@ -173,17 +168,16 @@ class DockwatchUpContainersSensor(Entity):
                 response.raise_for_status()
                 data = await response.json()
                 containers = data.get("response", [])
-                up_containers = [c["name"] for c in containers if c.get("status", "").lower() == "running"]
-
-                self._state = len(up_containers)
-                self._attributes = {"up_containers": ", ".join(up_containers)}
+                up_list = [c["name"] for c in containers if c.get("status", "").lower() == "running"]
+                self._state = len(up_list)
+                self._attributes = {"up_containers": ", ".join(up_list)}
         except Exception as e:
-            _LOGGER.error("Error updating Dockwatch running containers: %s", e)
+            _LOGGER.error("Update failed for Dockwatch running count: %s", e)
             self._state = STATE_UNKNOWN
 
 
 class DockwatchDownContainersSensor(Entity):
-    """Sensor for non-running containers count."""
+    """Sensor for the count of non-running containers."""
     def __init__(self, hass, host, api_key, scan_interval):
         self.hass = hass
         self._host = host
@@ -205,7 +199,7 @@ class DockwatchDownContainersSensor(Entity):
         return self._attributes
 
     async def async_update(self):
-        """Update down containers count."""
+        """Update the count of containers that are not running."""
         session = async_get_clientsession(self.hass)
         headers = {"X-Api-Key": self.api_key}
         try:
@@ -214,10 +208,9 @@ class DockwatchDownContainersSensor(Entity):
                 response.raise_for_status()
                 data = await response.json()
                 containers = data.get("response", [])
-                down_containers = [c["name"] for c in containers if c.get("status", "").lower() != "running"]
-
-                self._state = len(down_containers)
-                self._attributes = {"down_containers": ", ".join(down_containers)}
+                down_list = [c["name"] for c in containers if c.get("status", "").lower() != "running"]
+                self._state = len(down_list)
+                self._attributes = {"down_containers": ", ".join(down_list)}
         except Exception as e:
-            _LOGGER.error("Error updating Dockwatch down containers: %s", e)
+            _LOGGER.error("Update failed for Dockwatch stopped count: %s", e)
             self._state = STATE_UNKNOWN
