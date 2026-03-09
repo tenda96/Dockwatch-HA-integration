@@ -1,3 +1,6 @@
+![Views](https://img.shields.io/endpoint?url=https%3A%2F%2Fhits.dwyl.com%2Ftenda96%2FDockwatch-HA-integration.json%3Fcolor%3Dblue&style=for-the-badge)
+![Stars](https://img.shields.io/github/stars/tenda96/Dockwatch-HA-integration?style=for-the-badge&color=yellow)
+![Forks](https://img.shields.io/github/forks/tenda96/Dockwatch-HA-integration?style=for-the-badge&color=lightgrey)
 # Dockwatch Integration for Home Assistant
 
 <p align="center">
