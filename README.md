@@ -13,6 +13,7 @@ A custom integration for **Home Assistant** designed to monitor your Docker cont
 - 🚀 **Real-time Monitoring**: Track the status of all your containers (Running, Stopped, Exited).
 - 📊 **Resource Statistics**: View CPU and Memory usage for each container.
 - 🕒 **Uptime & Updates**: Monitor container uptime and check for available image updates.
+- ⚙️ **Dynamic Configuration**: Rename the integration or update your Host, Port, and API Key at any time without reinstalling.
 - 🎨 **UI Ready**: Perfectly compatible with Mushroom Cards and other custom Lovelace dashboards.
 
 ## Installation
@@ -29,9 +30,16 @@ A custom integration for **Home Assistant** designed to monitor your Docker cont
 1. Navigate to **Settings** > **Devices & Services** in Home Assistant.
 2. Click **Add Integration** and search for **Dockwatch**.
 3. Fill in the required fields:
+   - **Name** (Optional): A custom name for your integration.
    - **Host**: The IP address of your Dockwatch instance.
    - **Port**: The port used by Dockwatch (default is `9999`).
    - **API Key**: Your unique Dockwatch API key.
+
+### Modifying Settings
+You can update your configuration or rename the integration at any time after the initial setup:
+1. Go to **Settings** > **Devices & Services** and find the **Dockwatch** integration card.
+2. Click on the **Configure (Gear icon)**.
+3. Update your settings and click Submit. The integration will automatically reload with the new parameters.
 
 ### Finding your API Key
 1. Open the **Dockwatch** Web UI.
