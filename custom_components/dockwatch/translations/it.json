@@ -1,0 +1,45 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Dockwatch",
+        "description": "Configura la connessione alla tua istanza Dockwatch.",
+        "data": {
+          "name": "Nome",
+          "host": "Host",
+          "port": "Porta",
+          "ssl": "Usa HTTPS",
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile connettersi a Dockwatch. Controlla host, porta e protocollo.",
+      "invalid_auth": "API key Dockwatch non valida.",
+      "unknown": "Errore imprevisto. Controlla i log di Home Assistant."
+    },
+    "abort": {
+      "already_configured": "Questa istanza Dockwatch è già configurata."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni Dockwatch",
+        "description": "Aggiorna le impostazioni di connessione a Dockwatch.",
+        "data": {
+          "name": "Nome",
+          "host": "Host",
+          "port": "Porta",
+          "ssl": "Usa HTTPS",
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile connettersi a Dockwatch. Controlla host, porta e protocollo.",
+      "invalid_auth": "API key Dockwatch non valida.",
+      "unknown": "Errore imprevisto. Controlla i log di Home Assistant."
+    }
+  }
+}

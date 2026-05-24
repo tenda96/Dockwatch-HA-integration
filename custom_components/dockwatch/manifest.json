@@ -1,0 +1,12 @@
+{
+  "domain": "dockwatch",
+  "name": "Dockwatch",
+  "version": "2.1.0",
+  "documentation": "https://github.com/tenda96/Dockwatch-HA-integration",
+  "issue_tracker": "https://github.com/tenda96/Dockwatch-HA-integration/issues",
+  "codeowners": ["@tenda96"],
+  "config_flow": true,
+  "iot_class": "local_polling",
+  "integration_type": "hub",
+  "requirements": []
+}
