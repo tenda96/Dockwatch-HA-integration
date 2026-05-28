@@ -1,7 +1,7 @@
 {
   "domain": "dockwatch",
   "name": "Dockwatch",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "documentation": "https://github.com/tenda96/Dockwatch-HA-integration",
   "issue_tracker": "https://github.com/tenda96/Dockwatch-HA-integration/issues",
   "codeowners": ["@tenda96"],
