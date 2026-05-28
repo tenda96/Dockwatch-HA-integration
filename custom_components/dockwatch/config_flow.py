@@ -34,7 +34,7 @@ class DockwatchConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: config_entries.ConfigEntry):
         """Create the options flow."""
-        return DockwatchOptionsFlowHandler(config_entry)
+        return DockwatchOptionsFlowHandler()
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Handle the initial configuration step."""
@@ -67,33 +67,23 @@ class DockwatchConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class DockwatchOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Dockwatch options."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         """Manage integration options."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
             data = _normalize_user_input(user_input)
+            title = data.pop(CONF_NAME, self.config_entry.title)
 
-            try:
-                await _validate_connection(self.hass, data)
-            except InvalidAuth:
-                errors["base"] = "invalid_auth"
-            except CannotConnect:
-                errors["base"] = "cannot_connect"
-            except Exception:  # noqa: BLE001
-                errors["base"] = "unknown"
-            else:
-                title = data.pop(CONF_NAME, self.config_entry.title)
-                self.hass.config_entries.async_update_entry(
-                    self.config_entry,
-                    title=title,
-                    data={**self.config_entry.data, **data},
-                )
-                return self.async_create_entry(title="", data={})
+            # Save settings even if Dockwatch is currently offline.
+            # This allows fixing a wrong IP/host/API key from the UI.
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                title=title,
+                data={**self.config_entry.data, **data},
+            )
+
+            return self.async_create_entry(title="", data={})
 
         current = {
             CONF_NAME: self.config_entry.title,
