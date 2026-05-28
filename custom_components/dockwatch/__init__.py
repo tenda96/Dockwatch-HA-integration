@@ -21,9 +21,12 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Dockwatch from a config entry."""
     coordinator = DockwatchDataUpdateCoordinator(hass, entry)
-    await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    # Do not block setup if Dockwatch is offline or the IP/API key is wrong.
+    # This keeps the integration configurable from the Home Assistant UI.
+    await coordinator.async_refresh()
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
