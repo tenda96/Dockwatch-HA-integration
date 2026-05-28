@@ -89,6 +89,12 @@ The integration will reload automatically.
 
 ## Changelog
 
+### 2.1.1
+
+- Fixed settings flow when Dockwatch is offline or unreachable.
+- Settings can now be updated even if the Dockwatch host, IP or API key is wrong.
+- The integration no longer blocks setup when Dockwatch is temporarily unavailable.
+
 ### 2.0.1
 
 - Added HACS-compatible folder structure.
